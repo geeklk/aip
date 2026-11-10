@@ -290,7 +290,7 @@ final class AniKotoViewController: UIViewController,
         refreshControl.endRefreshing()
     }
 
-    // MARK: - Navigation
+    // MARK: - Domain Checks
 
     private func isAniKotoDomain(_ url: URL) -> Bool {
 
@@ -301,6 +301,28 @@ final class AniKotoViewController: UIViewController,
         return host == "anikoto.cz" ||
             host.hasSuffix(".anikoto.cz")
     }
+
+    private func isGoogleAuthDomain(_ url: URL) -> Bool {
+
+        guard let host = url.host?.lowercased() else {
+            return false
+        }
+
+        return host == "accounts.google.com" ||
+            host.hasSuffix(".accounts.google.com") ||
+            host == "consent.google.com" ||
+            host == "myaccount.google.com" ||
+            host == "google.com" ||
+            host.hasSuffix(".google.com") ||
+            host == "googleapis.com" ||
+            host.hasSuffix(".googleapis.com") ||
+            host == "gstatic.com" ||
+            host.hasSuffix(".gstatic.com") ||
+            host == "googleusercontent.com" ||
+            host.hasSuffix(".googleusercontent.com")
+    }
+
+    // MARK: - Navigation
 
     func webView(
         _ webView: WKWebView,
@@ -315,7 +337,7 @@ final class AniKotoViewController: UIViewController,
 
         if url.scheme == "https" || url.scheme == "http" {
 
-            if isAniKotoDomain(url) {
+            if isAniKotoDomain(url) || isGoogleAuthDomain(url) {
                 decisionHandler(.allow)
                 return
             }
@@ -327,7 +349,7 @@ final class AniKotoViewController: UIViewController,
                 return
             }
 
-            // Block external main-frame redirects and ad links.
+            // Block other external main-frame redirects.
             decisionHandler(.cancel)
             return
         }
@@ -355,11 +377,13 @@ final class AniKotoViewController: UIViewController,
             return nil
         }
 
-        if isAniKotoDomain(url) {
+        if isAniKotoDomain(url) || isGoogleAuthDomain(url) {
+
+            // Open trusted authentication popups in the same WebView.
             webView.load(URLRequest(url: url))
         }
 
-        // External pop-ups are blocked instead of opening Safari.
+        // Other external popups remain blocked.
         return nil
     }
 
